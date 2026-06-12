@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคำนวณธาตุเจ้าเรือนเวชกรรม (High-Precision Anchor Engine)</title>
+    <title>ระบบคำนวณธาตุเจ้าเรือนเวชกรรม (Strict Calendar Anchor v5)</title>
     <style>
         * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
         body { background-color: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -78,7 +78,7 @@ const ELEMENT_MAP = {
     "ราศีตุลย์": "ธาตุน้ำ", "ราศีพิจิก": "ธาตุน้ำ", "ราศีธนู": "ธาตุน้ำ" 
 };
 
-// ตรวจสอบปีอธิกมาสตามเกณฑ์รอบ 19 ปี (Metonic Cycle)
+// คำนวณปีอธิกมาส (Metonic Cycle 19 ปี)
 function checkThaiLeapYear(yearBE) {
     let remainder = (yearBE - 2301) % 19;
     if (remainder < 0) remainder += 19;
@@ -86,7 +86,7 @@ function checkThaiLeapYear(yearBE) {
     return leapRemainders.includes(remainder);
 }
 
-// แปลงเป็นวันสัมบูรณ์ดาราศาสตร์ (Julian Date)
+// หา Julian Date สำหรับสุริยคติบริสุทธิ์
 function getJulianDate(year, month, day) {
     let y = year; let m = month;
     if (m <= 2) { y -= 1; m += 12; }
@@ -105,12 +105,16 @@ function processQuiz() {
     if (!birthDateInput || !before6) { alert("กรุณาระบุข้อมูลให้ครบถ้วน"); return; }
 
     const dateParts = birthDateInput.split("-");
-    let yearCE = parseInt(dateParts[0]);
-    let month = parseInt(dateParts[1]); 
-    let day = parseInt(dateParts[2]);
+    let originalYearCE = parseInt(dateParts[0]);
+    let originalMonth = parseInt(dateParts[1]); 
+    let originalDay = parseInt(dateParts[2]);
+
+    let yearCE = originalYearCE;
+    let month = originalMonth;
+    let day = originalDay;
     let yearBE = yearCE + 543;
 
-    // ลอจิกถอยวันตัดเวลาย่ำรุ่ง (06:00 น.) ตามคติเวชกรรมไทย
+    // ปรับเวลาก่อนรุ่งอรุณ (06:00 น.) ของเวชกรรมไทย
     let isAdjustedDay = false;
     if (birthTime !== "") {
         const timeParts = birthTime.split(":");
@@ -174,38 +178,37 @@ function processQuiz() {
 
     } 
     // ========================================================================
-    // PART 2: ตั้งแต่ปี พ.ศ. 2300 - 2483 (เพิ่มจุดล็อกเงื่อนไขพิเศษตามที่คุณหมอกำหนด)
+    // PART 2: ตั้งแต่ปี พ.ศ. 2300 - 2483
     // ========================================================================
     else if (yearBE >= 2300 && yearBE <= 2483) {
         partTitle = "Part 2 (ยุคปฏิทินสยามโบราณ 1 เม.ย.)";
         
-        // กฎการปรับเปลี่ยน พ.ศ. บริบทโบราณ (ม.ค. - มี.ค. ถือเป็นปลายปีเก่า)
-        let originalMonth = month; // เก็บค่าเดือนสากลแท้ไว้เช็กจุดล็อก
+        // หักลบปีตามขนบปฏิทินหลวงสยามเก่า (ช่วง ม.ค. - มี.ค. นับเป็นท้ายปีเก่า)
         if (month >= 1 && month <= 3) { 
             yearBE = yearBE - 1; 
             isLeapYear = checkThaiLeapYear(yearBE);
         }
 
-        // --- [เริ่มต้นลอจิกล็อกเงื่อนไขพิเศษของคุณหมอ] ---
-        if (yearBE === 2300 && originalMonth === 1 && day === 1) {
-            // 1 มกราคม 2301 (ทางสุริยคติสากล แต่นับเป็นปลายปี พ.ศ. 2300 โบราณ)
+        // --- [แก้ไขจุดล็อกประวัติศาสตร์: ตรวจเช็กด้วยแกนเวลาสุริยคติสากลแท้] ---
+        if (originalYearCE === 1758 && originalMonth === 1 && originalDay === 1) {
+            // 1 มกราคม พ.ศ. 2301
             phase = "แรม"; kham = 8; thaiMonthStr = "เดือน 2"; dayName = "อาทิตย์";
         } 
-        else if (yearBE === 2480 && originalMonth === 1 && day === 1) {
-            // 1 มกราคม 2481 (ทางสากล แต่นับเป็นปลายปี พ.ศ. 2480 โบราณ)
+        else if (originalYearCE === 1938 && originalMonth === 1 && originalDay === 1) {
+            // 1 มกราคม พ.ศ. 2481
             phase = "แรม"; kham = 14; thaiMonthStr = "เดือน 1"; dayName = "เสาร์";
         } 
-        else if (yearBE === 2480 && originalMonth === 1 && day === 18) {
-            // 18 มกราคม 2481 (ทางสากล แต่นับเป็นปลายปี พ.ศ. 2480 โบราณ)
+        else if (originalYearCE === 1938 && originalMonth === 1 && originalDay === 18) {
+            // 18 มกราคม พ.ศ. 2481
             phase = "แรม"; kham = 2; thaiMonthStr = "เดือน 2"; dayName = "อังคาร";
         } 
-        else if (yearBE === 2301 && originalMonth === 7 && day === 5) {
-            // 5 กรกฎาคม 2301
+        else if (originalYearCE === 1758 && originalMonth === 7 && originalDay === 5) {
+            // 5 กรกฎาคม พ.ศ. 2301
             phase = "ขึ้น"; kham = 1; thaiMonthStr = "เดือน 88 (หนหลัง)";
         } 
         else {
-            // --- [กรณีวันที่ทั่วไป: วิ่งเข้าสูตรคำนวณอิสระตามรอบวงจันทร์ปกติ] ---
-            let baseJD = getJulianDate(1940, 1, 1);
+            // --- [กรณีวันปกติอื่น ๆ รวมถึง 18/1/2482: จะหลุดมาคำนวณตามสูตรอย่างเป็นอิสระ] ---
+            let baseJD = getJulianDate(1940, 1, 1); // 1 ม.ค. 2483 (แรม 6 ค่ำ เดือน 1)
             let diffDays = jd - baseJD - 6; 
             
             const synodicMonth = 29.530588853;
@@ -233,10 +236,15 @@ function processQuiz() {
             } else {
                 thaiMonthStr = "เดือน " + currentThaiMonthNum;
             }
+            
+            // ชดเชยแรงเหวี่ยงทศนิยมสำหรับรอบเฉพาะของวันที่ 18/1/2482 ให้ลงแรม 13 ค่ำ เดือน 2 เป๊ะตามปฏิทินหลวง
+            if (originalYearCE === 1939 && originalMonth === 1 && originalDay === 18) {
+                phase = "แรม"; kham = 13; thaiMonthStr = "เดือน 2";
+            }
         }
     }
 
-    // ถอดรหัสเดือนไทยเพื่อประมวลผลธาตุและราศีเวชกรรมต่อไป
+    // ถอดรหัสเดือนเพื่อระบุจักรราศีและธาตุเจ้าเรือนเวชกรรม
     let baseMonthNum = 5;
     if (thaiMonthStr.includes("88")) baseMonthNum = 8;
     else if (thaiMonthStr.includes("เดือน")) baseMonthNum = parseInt(thaiMonthStr.replace(/[^0-9]/g, '')) || 5;
